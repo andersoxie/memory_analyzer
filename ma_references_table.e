@@ -74,14 +74,17 @@ feature -- Element change
 			else
 				l_hash := relations.found_item
 			end
-			check l_hash /= Void end -- Implied by previous if clause
-			l_hash.force ([a_referee, data], a_referrer)
+			if attached l_hash as l_h then
+				l_h.force ([a_referee, data], a_referrer)
+			else
+				check attached_l_hash : false end -- Implied by previous if clause
+			end
 		end
 
 feature -- Removal
 
 	remove (a_referrer: G; a_referee: H)
-			-- Remove relation between `'a_referrer' and `a_referee'.
+			-- Remove relation between `'a_referrer' and `a_referee' if it exists a relation.
 		require
 			a_referrer_not_void: a_referrer /= Void
 			a_referee_not_void: a_referee /= Void
@@ -90,10 +93,13 @@ feature -- Removal
 		do
 			if relations.has_key (a_referee) then
 				l_hash := relations.found_item
-				check l_hash /= Void end -- Implied by `has_key'
-				l_hash.remove (a_referrer)
-				if l_hash.is_empty then
-					relations.remove (a_referee)
+				if attached l_hash as l_h then
+					l_h.remove (a_referrer)
+					if l_h.is_empty then
+						relations.remove (a_referee)
+					end
+				else
+					check attached_l_hash : false end -- Implied by `has_key'
 				end
 			end
 		end
@@ -103,14 +109,14 @@ feature {NONE} -- Implementation
 	relations: HASH_TABLE [like references_by_referee, H];
 
 note
-	copyright:	"Copyright (c) 1984-2006, Eiffel Software and others"
+	copyright:	"Copyright (c) 1984-2014, Eiffel Software and others"
 	license:	"Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 	source: "[
-			 Eiffel Software
-			 356 Storke Road, Goleta, CA 93117 USA
-			 Telephone 805-685-1006, Fax 805-685-6869
-			 Website http://www.eiffel.com
-			 Customer support http://support.eiffel.com
+			Eiffel Software
+			5949 Hollister Ave., Goleta, CA 93117 USA
+			Telephone 805-685-1006, Fax 805-685-6869
+			Website http://www.eiffel.com
+			Customer support http://support.eiffel.com
 		]"
 
 end

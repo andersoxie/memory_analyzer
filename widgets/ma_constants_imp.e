@@ -453,8 +453,12 @@ feature -- Access
 			l_item: detachable STRING
 		do
 			l_item := all_constants.item (a_name)
-			check l_item /= Void end -- Implied by precondition `has_constant'
-			Result := l_item.twin
+			if attached l_item as l_i then
+				Result := l_item.twin
+			else
+				check l_item_attached : false end -- Implied by precondition `has_constant'
+				create Result.make_empty -- Since the behaviour is undefined when precondition is not satisfied we are allowed to return an empty string
+			end
 		ensure
 			Result_not_void: Result /= Void
 		end
@@ -470,8 +474,12 @@ feature -- Access
 			l_item: detachable STRING
 		do
 			l_item := all_constants.item (a_name)
-			check l_item /= Void end -- Implied by precondition `has_constant'
-			l_string := l_item.twin
+			if attached l_item as l_i then
+				l_string := l_item.twin
+			else
+				check l_item_attached : false end -- Implied by precondition `has_constant'
+				create l_string.make_empty -- Since the behaviour is undefined when precondition is not satisfied we are allowed to return 0
+			end
 			check
 				is_integer: l_string.is_integer
 			end
@@ -580,14 +588,14 @@ invariant
 	all_constants_not_void: all_constants /= Void
 
 note
-	copyright:	"Copyright (c) 1984-2008, Eiffel Software and others"
+	copyright:	"Copyright (c) 1984-2014, Eiffel Software and others"
 	license:	"Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 	source: "[
-			 Eiffel Software
-			 356 Storke Road, Goleta, CA 93117 USA
-			 Telephone 805-685-1006, Fax 805-685-6869
-			 Website http://www.eiffel.com
-			 Customer support http://support.eiffel.com
+			Eiffel Software
+			5949 Hollister Ave., Goleta, CA 93117 USA
+			Telephone 805-685-1006, Fax 805-685-6869
+			Website http://www.eiffel.com
+			Customer support http://support.eiffel.com
 		]"
 
 end -- class MA_CONSTANTS_IMP

@@ -92,63 +92,78 @@ feature {NONE} -- Results
 				init_grid (l_grid)
 				result_panel.extend (l_grid)
 			end
-			check l_grid /= Void end -- Implied by previous if clause
-			l_column := l_grid.column_count + 1
-			l_route_stack := route_stack
-			check attached l_route_stack end -- Implied by precondition `set'
-			l_array := l_route_stack.linear_representation
-			l_grid.set_row_count_to (l_array.count.max (l_grid.row_count))
-			l_grid.set_column_count_to (l_column)
-			l_grid.column (l_column).set_title ("Route" + l_column.out)
-			from
-				l_array.start
-			until
-				l_array.after
-			loop
-				if not l_array.islast then
-					l_next_index := l_array [l_array.index + 1]
-				else
-					l_last := True
-				end
-				if not l_last then
-					l_reference_table := reference_table
-					check l_reference_table /= Void end -- Implied by precondition `set'
-					l_tuple := l_reference_table.references_by_referee (l_next_index).item (l_array.item)
-					if l_tuple /= Void then
-						if attached {STRING} l_tuple.data as l_string then
-							l_field_name := l_string
+			if attached l_grid as l_l_grid then
+				l_column := l_l_grid.column_count + 1
+				l_route_stack := route_stack
+				if attached l_route_stack as l_r then
+					l_array := l_r.linear_representation
+					l_l_grid.set_row_count_to (l_array.count.max (l_l_grid.row_count))
+					l_l_grid.set_column_count_to (l_column)
+					l_l_grid.column (l_column).set_title ("Route" + l_column.out)
+					from
+						l_array.start
+					until
+						l_array.after
+					loop
+						if not l_array.islast then
+							l_next_index := l_array [l_array.index + 1]
+						else
+							l_last := True
+						end
+						if not l_last then
+							l_reference_table := reference_table
+							if attached l_reference_table as l_ref then
+								l_tuple := l_ref.references_by_referee (l_next_index).item (l_array.item)
+							else
+								check attached_l_reference_table : false end -- Implied by precondition `set'
+							end
+							if l_tuple /= Void then
+								if attached {STRING} l_tuple.data as l_string then
+									l_field_name := l_string
+								else
+										--|FIXME: 2012/04/06 Shouldn't this be "(unknown)", instead of setting it Void? See review#7644004.
+									l_field_name := Void
+								end
+							else
+								l_field_name := once "(unknown)"
+							end
 						else
 								--|FIXME: 2012/04/06 Shouldn't this be "(unknown)", instead of setting it Void? See review#7644004.
 							l_field_name := Void
 						end
-					else
-						l_field_name := once "(unknown)"
+						if l_field_name = Void then
+							l_field_name := once ""
+						else
+							l_field_name := l_field_name.twin
+							l_field_name.prepend (".")
+						end
+							-- Optimization, since we know that only the first object is once object.
+						if l_array.isfirst then
+							l_once := once "*"
+						else
+							l_once := once ""
+						end
+						l_name_table := name_table
+						if attached l_name_table as l_n then
+							l_name_table_item := l_n.item (l_array.item)
+							if attached l_name_table_item as l_name_item then
+								l_text := l_once + l_array.item.out + once ": {" + l_name_item + once "}" + l_field_name
+								create l_item.make_with_text (l_text)
+								l_item.set_tooltip (l_text)
+								l_l_grid.set_item (l_column, l_array.index, l_item)
+								l_array.forth
+							else
+								check attached_l_name_table_item : false end -- FIXME: Implied by ...?
+							end
+						else
+							check attached_l_name_table : false end -- Implied by precondition `set'
+						end
 					end
 				else
-						--|FIXME: 2012/04/06 Shouldn't this be "(unknown)", instead of setting it Void? See review#7644004.
-					l_field_name := Void
+					check attached_l_route_stack : false end -- Implied by precondition `set'
 				end
-				if l_field_name = Void then
-					l_field_name := once ""
-				else
-					l_field_name := l_field_name.twin
-					l_field_name.prepend (".")
-				end
-					-- Optimization, since we know that only the first object is once object.
-				if l_array.isfirst then
-					l_once := once "*"
-				else
-					l_once := once ""
-				end
-				l_name_table := name_table
-				check l_name_table /= Void end -- Implied by precondition `set'
-				l_name_table_item := l_name_table.item (l_array.item)
-				check l_name_table_item /= Void end -- FIXME: Implied by ...?
-				l_text := l_once + l_array.item.out + once ": {" + l_name_table_item + once "}" + l_field_name
-				create l_item.make_with_text (l_text)
-				l_item.set_tooltip (l_text)
-				l_grid.set_item (l_column, l_array.index, l_item)
-				l_array.forth
+			else
+				check attached_l_grid : false end -- Implied by previous if clause
 			end
 		end
 
@@ -183,13 +198,19 @@ feature {NONE} -- Results
 				inspect a_key.code
 				when {EV_KEY_CONSTANTS}.key_a then
 					l_grid := grid
-					check l_grid /= Void end -- Implied by precondition `grid_set'
-					select_all_row (l_grid)
+					if attached l_grid as l_g then
+						select_all_row (l_g)
+					else
+						check attached_l_grid :false end -- Implied by precondition `grid_set'
+					end
 				when {EV_KEY_CONSTANTS}.key_c then
 					l_grid := grid
-					check l_grid /= Void end -- Implied by precondition `grid_set'					
-					if not l_grid.selected_items.is_empty then
-						copy_selected_items (l_grid)
+					if attached l_grid as l_g then
+						if not l_g.selected_items.is_empty then
+							copy_selected_items (l_g)
+						end
+					else
+						check attached_l_grid : false end -- Implied by precondition `grid_set'
 					end
 				else
 				end
@@ -318,15 +339,18 @@ feature {NONE} -- Implementation
 			create l_route_stack.make (1000)
 			route_stack := l_route_stack
 			l_reference_table := reference_table
-			check l_reference_table /= Void end -- Implied by precondition `set'
-			create visited_references.make (l_reference_table.referee_count)
-			if deep_visit_node (start_index) then
-				-- Found route
-				check
-					route_stack_not_empty: not l_route_stack.is_empty
+			if attached l_reference_table as l_r then
+				create visited_references.make (l_r.referee_count)
+				if deep_visit_node (start_index) then
+					-- Found route
+					check
+						route_stack_not_empty: not l_route_stack.is_empty
+					end
+					fill_results
+					remove_last_link_to_once
 				end
-				fill_results
-				remove_last_link_to_once
+			else
+				check attached_l_reference_table : false end -- Implied by precondition `set'
 			end
 		end
 
@@ -350,61 +374,67 @@ feature {NONE} -- Implementation
 	deep_visit_node (a_referee: like start_index): BOOLEAN
 			-- Deep visit a node, Ture is found once object.
 		require
-			set: attached reference_table
+			set: attached reference_table as l_reference_table and then attached l_reference_table.references_by_referee (a_referee)
 			set: attached route_stack
 			set: attached visited_references
 		local
-			l_all_referrers, l_visited_referrers: HASH_TABLE [TUPLE [like start_index, detachable ANY], like start_index]
+			l_visited_referrers: HASH_TABLE [TUPLE [like start_index, detachable ANY], like start_index]
 			l_referrer: like start_index
 			l_all_referrers_count: INTEGER
-			l_visited_references: like visited_references
-			l_reference_table: like reference_table
-			l_route_stack: like route_stack
 		do
 			if is_visited (a_referee) then
 				Result := False
 			else
-				l_route_stack := route_stack
-				check l_route_stack /= Void end -- Implied by precondition `set'
-				l_route_stack.put (a_referee)
-				l_reference_table := reference_table
-				check l_reference_table /= Void end -- Implied by precondition `set'
-				l_all_referrers := l_reference_table.references_by_referee (a_referee)
-				l_all_referrers_count := l_all_referrers.count
-				if l_all_referrers_count = 0 then
-						-- We reach the end. No referrer.
-					if is_once_object (a_referee) then
-						Result := True
-					else
-						Result := False
-					end
-				elseif is_once_object (a_referee) then
-					Result := True
-				else
-					l_visited_references := visited_references
-					check attached l_visited_references end -- Implied by precondition `set'
-					l_visited_referrers := l_visited_references.references_by_referee (a_referee)
-					if l_all_referrers_count = l_visited_referrers.count then
-							-- Go back one
-						Result := False
-						l_route_stack.remove
-					else
-						from
-							l_all_referrers.start
-						until
-							l_all_referrers.after or Result
-						loop
-							l_referrer := l_all_referrers.key_for_iteration
-							if not l_visited_referrers.has_key (l_referrer) then
-								l_visited_references.extend (l_referrer, a_referee, Void)
-								Result := deep_visit_node (l_referrer)
+				if attached route_stack as l_route_stack  then
+					l_route_stack.put (a_referee)
+					if attached reference_table as l_reference_table  then
+						if attached l_reference_table.references_by_referee (a_referee) as l_all_referrers  then
+							l_all_referrers_count := l_all_referrers.count
+							if l_all_referrers_count = 0 then
+									-- We reach the end. No referrer.
+								if is_once_object (a_referee) then
+									Result := True
+								else
+									Result := False
+								end
+							elseif is_once_object (a_referee) then
+								Result := True
+							else
+								if attached visited_references as l_visited_references  then
+									l_visited_referrers := l_visited_references.references_by_referee (a_referee)
+									if l_all_referrers_count = l_visited_referrers.count then
+											-- Go back one
+										Result := False
+										l_route_stack.remove
+									else
+										from
+											l_all_referrers.start
+										until
+											l_all_referrers.after or Result
+										loop
+											l_referrer := l_all_referrers.key_for_iteration
+											if not l_visited_referrers.has_key (l_referrer) then
+												l_visited_references.extend (l_referrer, a_referee, Void)
+												Result := deep_visit_node (l_referrer)
+											end
+											l_all_referrers.forth
+										end
+										if not Result then
+											l_route_stack.remove
+										end
+									end
+								else
+									check attached_l_visited_references : false end -- Implied by precondition `set'
+								end
 							end
-							l_all_referrers.forth
+						else
+							check attached_l_reference_table_references_by_referee : false end -- Implied by precondition `set'
 						end
-						if not Result then
-							l_route_stack.remove
-						end
+					else
+						check attached_l_reference_table : false end -- Implied by precondition `set'
 					end
+				else
+					check attached_l_route_stack : false end -- Implied by precondition `set'
 				end
 			end
 		end
@@ -434,24 +464,24 @@ feature {NONE} -- Implementation
 			-- Is `a_node' visited?
 		require
 			set: attached route_stack
-		local
-			l_route_stack: like route_stack
 		do
-			l_route_stack := route_stack
-			check l_route_stack /= Void end -- Implied by precondition `set'
-			Result := l_route_stack.has (a_node)
+			if attached route_stack as l_route_stack then
+				Result := l_route_stack.has (a_node)
+			else
+				check attached_route_stack : false end -- Implied by precondition `set'					
+			end
 		end
 
 	is_once_object (a_object: like start_index): BOOLEAN
 			-- Is `a_object' once?
 		require
 			set: attached once_objects_table
-		local
-			l_table: like once_objects_table
 		do
-			l_table := once_objects_table
-			check attached l_table end -- Implied by precondition `set'
-			Result := l_table.has (a_object)
+			if attached once_objects_table as l_table  then
+				Result := l_table.has (a_object)
+			else
+				check attached_l_table : false end -- Implied by precondition `set'
+			end
 		end
 
 	route_stack: detachable ARRAYED_STACK [like start_index]
@@ -465,7 +495,7 @@ invariant
 	result_panel_not_void: result_panel /= Void
 
 note
-	copyright:	"Copyright (c) 1984-2012, Eiffel Software and others"
+	copyright:	"Copyright (c) 1984-2014, Eiffel Software and others"
 	license:	"Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 	source: "[
 			Eiffel Software

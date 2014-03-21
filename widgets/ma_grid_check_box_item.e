@@ -21,7 +21,7 @@ feature {NONE} -- Initialization
 			-- Creation method.
 		do
 			create selected_changed_actions
-			
+
 			default_create
 			expose_actions.extend (agent draw_overlay_pixmap)
 			pointer_button_press_actions.force_extend (agent handle_pointer_pressed)
@@ -108,8 +108,11 @@ feature {NONE} -- Implementation
 					a_drawable.set_foreground_color (l_row_background_color)
 				else
 					l_parent_2 := parent
-					check attached l_parent_2 end -- FIXME: Implied by ...?
-					a_drawable.set_foreground_color (l_parent_2.background_color)
+					if attached l_parent_2 as l_p then
+						a_drawable.set_foreground_color (l_p.background_color)
+					else
+						check l_parent_2_attached : false end -- FIXME: Implied by ...? -- I have tried to understand if the state of the current instance tells us that this will not happen. Next step would be to define a precondition or invariant. At least the behaviour is not worse than before this change.
+					end
 				end
 			end
 			a_drawable.fill_rectangle (0, 0, a_drawable.width, a_drawable.height)
@@ -242,14 +245,14 @@ invariant
 	selected_changed_actions_not_void: selected_changed_actions /= Void
 
 note
-	copyright:	"Copyright (c) 1984-2006, Eiffel Software and others"
+	copyright:	"Copyright (c) 1984-2014, Eiffel Software and others"
 	license:	"Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 	source: "[
-			 Eiffel Software
-			 356 Storke Road, Goleta, CA 93117 USA
-			 Telephone 805-685-1006, Fax 805-685-6869
-			 Website http://www.eiffel.com
-			 Customer support http://support.eiffel.com
+			Eiffel Software
+			5949 Hollister Ave., Goleta, CA 93117 USA
+			Telephone 805-685-1006, Fax 805-685-6869
+			Website http://www.eiffel.com
+			Customer support http://support.eiffel.com
 		]"
 
 

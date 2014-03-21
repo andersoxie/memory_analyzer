@@ -77,8 +77,12 @@ feature  -- Singletons
 			l_item: detachable MA_WINDOW
 		do
 			l_item := internal_main_window.item
-			check attached l_item end -- Implied by precondition
-			Result := l_item
+			if attached l_item as l_i then
+				Result := l_item
+			else
+				check l_item_attached : false end -- Implied by precondition
+				create Result.make ("")  -- Since the behaviour is undefined when precondition is not satisfied we are allowed to return an undefined window.
+			end
 		ensure
 			result_not_void: Result /= Void
 		end
@@ -235,14 +239,14 @@ invariant
 	internal_main_window_not_void: internal_main_window /= Void
 
 note
-	copyright:	"Copyright (c) 1984-2008, Eiffel Software and others"
+	copyright:	"Copyright (c) 1984-2014, Eiffel Software and others"
 	license:	"Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 	source: "[
-			 Eiffel Software
-			 356 Storke Road, Goleta, CA 93117 USA
-			 Telephone 805-685-1006, Fax 805-685-6869
-			 Website http://www.eiffel.com
-			 Customer support http://support.eiffel.com
+			Eiffel Software
+			5949 Hollister Ave., Goleta, CA 93117 USA
+			Telephone 805-685-1006, Fax 805-685-6869
+			Website http://www.eiffel.com
+			Customer support http://support.eiffel.com
 		]"
 
 end

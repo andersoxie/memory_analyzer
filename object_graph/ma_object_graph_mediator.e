@@ -83,8 +83,12 @@ feature -- Command
 				end
 				objects_already_draw.forth
 			end
-			check attached l_result end -- FIXME: Implied by ...?
-			Result := l_result
+			if attached l_result as l_r then
+				Result := l_r
+			else
+				check attached_l_result : false end -- FIXME: Implied by ...?
+				create Result.default_create --  FIXME: Since we do not have a (clear) precondition we are not allowed to return like this. Need precondition.
+			end
 		ensure
 			result_not_void : Result /= Void
 		end
@@ -172,26 +176,30 @@ feature -- Command
 			graph.add_node (l_last_drawn_node)
 
 			fig := world.figure_from_model (l_last_drawn_node)
-			check attached fig end -- Implied by `l_last_drawn_node' has been just added
-			fig.set_point_position (ax, ay)
+			if attached fig as l_fig then
 
-			-- Make new node figure a drop target
-			fig.set_accept_cursor (accept_node)
-			fig.set_deny_cursor (deny_node)
---			fig.drop_actions.extend (agent on_link_drop (?, last_drawn_node))
+				l_fig.set_point_position (ax, ay)
 
-			-- Make new node figure pickable
---			fig.set_pebble (create {NODE_STONE}.make (last_drawn_node))
+				-- Make new node figure a drop target
+				l_fig.set_accept_cursor (accept_node)
+				l_fig.set_deny_cursor (deny_node)
+	--			l_fig.drop_actions.extend (agent on_link_drop (?, last_drawn_node))
 
-			fig.pointer_button_release_actions.extend (agent on_select_node)
-			l_tuple := [a_object, l_last_drawn_node]
-			check
-				a_object /= Void
-				last_drawn_node /= Void
+				-- Make new node figure pickable
+	--			l_fig.set_pebble (create {NODE_STONE}.make (last_drawn_node))
+
+				l_fig.pointer_button_release_actions.extend (agent on_select_node)
+				l_tuple := [a_object, l_last_drawn_node]
+				check
+					a_object /= Void
+					last_drawn_node /= Void
+				end
+				world.update
+				-- Put the object and the node into the hashtable
+				objects_already_draw.force (l_tuple, l_fig)
+			else
+				check attached_fig : false end -- Implied by `l_last_drawn_node' has been just added
 			end
-			world.update
-			-- Put the object and the node into the hashtable
-			objects_already_draw.force (l_tuple, fig)
 		end
 
 	on_select_node (a_x: INTEGER; a_y: INTEGER; a_button: INTEGER; a_x_tilt: DOUBLE; a_y_tilt: DOUBLE; a_pressure: DOUBLE; a_screen_x: INTEGER; a_screen_y: INTEGER)
@@ -234,6 +242,9 @@ feature -- Implementation for agents
 
 	find_refers
 			-- Find the refers to current slected node and draw the nodes which refer to it.
+		require
+			figures_exists: world.selected_figures.count > 0
+			attached_item : attached objects_already_draw.item (world.selected_figures.first)
 		local
 			l_nodes: ARRAYED_LIST [EG_FIGURE]
 			l_node: EG_FIGURE
@@ -250,38 +261,50 @@ feature -- Implementation for agents
 			if l_nodes.count > 0 then
 				l_node := l_nodes.first
 				l_item := objects_already_draw.item (l_node)
-				check attached l_item end -- FIXME: Implied by ...?
-				l_object :=	l_item.obj
-				l_refers := memory.referers (l_object)
-				from
-					l_int := 0
-					refer_count := l_refers.count
-				until
-					l_int = refer_count
-				loop
-					if object_already_draw(l_refers.item (l_int))  then
-						-- add link to two already drawed object
-						l_link_node := find_draw_node_by_object(l_refers.item (l_int))
-						l_item := objects_already_draw.item (l_node)
-						check attached l_item end -- FIXME: Implied by ...?
-						l_linkable := l_item.node
-						check
-							l_linkable /= Void
+				if attached l_item as l_i then
+					l_object :=	l_i.obj
+					l_refers := memory.referers (l_object)
+					from
+						l_int := 0
+						refer_count := l_refers.count
+					until
+						l_int = refer_count
+					loop
+						if object_already_draw(l_refers.item (l_int))  then
+							-- add link to two already drawed object
+							l_link_node := find_draw_node_by_object(l_refers.item (l_int))
+							l_item := objects_already_draw.item (l_node)
+							if attached l_item as l_it then
+								l_linkable := l_it.node
+								check
+									l_linkable /= Void
+								end
+								add_link (l_linkable, l_link_node )
+							else
+								check attached_l_item : false end -- FIXME: Implied by that we iterate over the available number of items.
+							end
+						else
+							add_node_random_pos(l_refers.item (l_int))
+							l_item := objects_already_draw.item (l_node)
+							if attached l_item as l_it then
+								l_linkable := l_it.node
+								check
+									l_linkable /= Void
+								end
+								l_last_drawn_node := last_drawn_node
+								if attached l_last_drawn_node as l_last then
+									add_link (l_linkable, l_last)
+								else
+									check attachedl_last_drawn_node : false end -- FIXME: Implied by ...? Can not understand if this is impleied or not.
+								end
+							else
+								check attached_l_item : false end -- Implied by that we iterate over the available number of items.
+							end
 						end
-						add_link (l_linkable, l_link_node )
-					else
-						add_node_random_pos(l_refers.item (l_int))
-						l_item := objects_already_draw.item (l_node)
-						check attached l_item end -- FIXME: Implied by ...?
-						l_linkable := l_item.node
-						check
-							l_linkable /= Void
-						end
-						l_last_drawn_node := last_drawn_node
-						check attached l_last_drawn_node end -- FIXME: Implied by ...?
-						add_link (l_linkable, l_last_drawn_node)
+						l_int := l_int + 1
 					end
-					l_int := l_int + 1
+				else
+					check attached_l_item : false  end -- FIXME: Implied by precondition
 				end
 			else
 				create l_info_dlg.make_with_text ("Please select a node first.")
@@ -441,6 +464,9 @@ feature {NONE} -- Low Level Logic Implementation
 		once
 			create Result.make
 		end
+feature
+	objects_already_draw: HASH_TABLE [TUPLE [obj: ANY; node: EG_NODE], EG_FIGURE]
+			-- Objects which is already draw on the graph, ANY is the object which EG_NODE is correspond to
 
 feature {NONE} -- Fields
 
@@ -456,13 +482,12 @@ feature {NONE} -- Fields
 	last_drawn_node: detachable EG_NODE
 			--Node which was just drawed
 
-	objects_already_draw: HASH_TABLE [TUPLE [obj: ANY; node: EG_NODE], EG_FIGURE]
-			-- Objects which is already draw on the graph, ANY is the object which EG_NODE is correspond to
-
 	object_drawing : EV_FRAME
 			-- Place this class to draw graphics of objects
+feature
 	world: EG_FIGURE_WORLD
 			-- World allowing to manipulate the graph.
+feature {NONE}
 	model_cell: MA_WORLD_CELL
 			-- Cell allowing to edit the graph.
 	graph: EG_GRAPH
@@ -486,7 +511,7 @@ invariant
 	objects_already_draw_has_no_void_item: True-- No Void items in `objects_already_draw'
 
 note
-	copyright:	"Copyright (c) 1984-2012, Eiffel Software and others"
+	copyright:	"Copyright (c) 1984-2014, Eiffel Software and others"
 	license:	"Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 	source: "[
 			Eiffel Software

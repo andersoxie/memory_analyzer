@@ -189,30 +189,31 @@ feature {NONE} -- Implemention
 			l_int: INTEGER
 			l_item: EV_GRID_LABEL_ITEM
 			l_i: INTEGER
-			l_grid_data_increased: like grid_data_increased
 		do
-			from
-				l_grid_data_increased := grid_data_increased
-				check attached l_grid_data_increased end -- Implied by precondition `set'
-				l_grid_data_increased.start
-			until
-				l_grid_data_increased.after
-			loop
-				if not filter.filter_class (l_grid_data_increased.item_for_iteration.text) then
-					l_i := l_i + 1
-					create l_item.make_with_text (l_grid_data_increased.item_for_iteration.text)
-					l_item.set_pixmap (icons.object_grid_class_icon)
-					grid_changed.set_item (1, l_i, l_item)
-					l_int := l_grid_data_increased.item_for_iteration.nb
-					create l_item.make_with_text (l_int.out)
-					if l_int > 0 then
-						l_item.set_foreground_color (increased_color)
-					else
-						l_item.set_foreground_color (decreased_color)
+			if attached grid_data_increased as l_grid_data_increased then
+				from
+					l_grid_data_increased.start
+				until
+					l_grid_data_increased.after
+				loop
+					if not filter.filter_class (l_grid_data_increased.item_for_iteration.text) then
+						l_i := l_i + 1
+						create l_item.make_with_text (l_grid_data_increased.item_for_iteration.text)
+						l_item.set_pixmap (icons.object_grid_class_icon)
+						grid_changed.set_item (1, l_i, l_item)
+						l_int := l_grid_data_increased.item_for_iteration.nb
+						create l_item.make_with_text (l_int.out)
+						if l_int > 0 then
+							l_item.set_foreground_color (increased_color)
+						else
+							l_item.set_foreground_color (decreased_color)
+						end
+						grid_changed.set_item (2, l_i, l_item)
 					end
-					grid_changed.set_item (2, l_i, l_item)
+					l_grid_data_increased.forth
 				end
-				l_grid_data_increased.forth
+			else
+				check attached_grid_data_increased : false end -- Implied by precondition `set'
 			end
 		end
 
@@ -282,14 +283,21 @@ feature {NONE} -- Implemention
 
 	handle_pick_item (a_item: EV_GRID_LABEL_ITEM): MA_CLASS_STONE
 			-- User pick a item from grid to filter.
+		require
+			a_item_attached : attached a_item
+			index_equal_1 : a_item.column.index = 1
 		local
 			l_result: detachable like handle_pick_item
 		do
 			if a_item /= Void and a_item.column.index = 1 then
 				l_result := create {MA_CLASS_STONE}.make (a_item.text)
 			end
-			check attached l_result end -- FIXME: Implied by ...?
-			Result := l_result
+			if attached l_result then
+				Result := l_result
+			else
+				check attached_l_result : false end -- Implied by preconditions
+				create Result.make ("")  --  If preonditions is not satisfied we can return whatever we want.
+			end
 		end
 
 	sort_data
@@ -299,7 +307,6 @@ feature {NONE} -- Implemention
 		local
 			l_sorter: QUICK_SORTER [like grid_data_increased_row]
 			l_agent_sorter: AGENT_EQUALITY_TESTER [like grid_data_increased_row]
-			l_grid_data_increased: like grid_data_increased
 		do
 			inspect
 				sorted_column
@@ -307,9 +314,11 @@ feature {NONE} -- Implemention
 			when 2 then create l_agent_sorter.make (agent sort_on_count)
 			end
 			create l_sorter.make (l_agent_sorter)
-			l_grid_data_increased := grid_data_increased
-			check attached l_grid_data_increased end -- Implied by precondition
-			l_sorter.sort (l_grid_data_increased)
+			if attached grid_data_increased as l_grid_data_increased then
+				l_sorter.sort (l_grid_data_increased)
+			else
+				check attached_grid_data_increased : false end -- Implied by precondition
+			end
 		end
 
 	sorting_order: BOOLEAN
@@ -353,8 +362,11 @@ feature {NONE} -- Implemention
 			l_result: detachable like grid_data_increased_row
 		do
 			check False end -- Anchor type only
-			check attached l_result end -- Satisfy void-safe compiler
-			Result := l_result
+			if attached l_result as l_r then
+				Result := l_result
+			else
+				create Result.default_create 
+			end
 		end
 
 	grid_data_increased: detachable ARRAYED_LIST [like grid_data_increased_row]
@@ -372,8 +384,11 @@ feature {NONE} -- Implemention
 			l_result: detachable like row_data
 		do
 			check False end -- Anchor type only
-			check attached l_result end -- Satisfy void-safe compiler
-			Result := l_result
+			if attached l_result as l_r then
+				Result := l_result
+			else
+				create Result.default_create
+			end
 		end
 
 	grid_from_state, grid_to_state: EV_GRID -- Two grid show states.
@@ -393,7 +408,7 @@ invariant
 	grid_increased_not_void: grid_changed /= Void
 	grid_data_not_void: grid_data /= Void
 note
-	copyright:	"Copyright (c) 1984-2013, Eiffel Software and others"
+	copyright:	"Copyright (c) 1984-2014, Eiffel Software and others"
 	license:	"Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 	source: "[
 			Eiffel Software
