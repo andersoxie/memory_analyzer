@@ -12,14 +12,12 @@ inherit
 	EG_LINK_FIGURE
 		redefine
 			default_create,
-			xml_node_name
+			xml_node_name,
+			model
 		end
 
 create
 	make_with_model
-
-create {MA_REFERENCE_LINK}
-	make_filled
 
 feature {NONE} -- Initialization
 
@@ -39,8 +37,8 @@ feature {NONE} -- Initialization
 		require
 			a_model_not_void: a_model /= Void
 		do
-			default_create
 			model := a_model
+			default_create
 			initialize
 
 			if a_model.is_directed then
@@ -59,6 +57,10 @@ feature {NONE} -- Initialization
 		end
 
 feature -- Access
+
+	model: EG_LINK
+ 			-- <Precursor>
+ 			-- Not useful redefinition if the library rely on a graph library with `model' attached.
 
 	set_color
 			-- Set the color of the reference line.
@@ -107,46 +109,41 @@ feature {EG_FIGURE, EG_FIGURE_WORLD} -- Update
 			an_angle: DOUBLE
 			source_size: EV_RECTANGLE
 		do
-			if attached model as l_model then
-				if not l_model.is_reflexive then
-					if attached source as l_source and then attached target as l_target then
-						p1 := line.point_array.item (0)
-						p2 := line.point_array.item (1)
+			if not model.is_reflexive then
+				if attached source as l_source and then attached target as l_target then
+					p1 := line.point_array.item (0)
+					p2 := line.point_array.item (1)
 
-						p1.set (l_source.port_x, l_source.port_y)
-						p2.set (l_target.port_x, l_target.port_y)
+					p1.set (l_source.port_x, l_source.port_y)
+					p2.set (l_target.port_x, l_target.port_y)
 
-						an_angle := line_angle (p1.x_precise, p1.y_precise, p2.x_precise, p2.y_precise)
-						l_source.update_edge_point (p1, an_angle)
-						an_angle := pi + an_angle
-						l_target.update_edge_point (p2, an_angle)
-					elseif attached source as l_source_2 then
-						p1 := line.point_array.item (0)
-						p1.set (l_source_2.port_x, l_source_2.port_y)
-						l_source_2.update_edge_point (p1, 0)
-					elseif attached target as l_target_2 then
-						p2 := line.point_array.item (1)
-						p2.set (l_target_2.port_x, l_target_2.port_y)
-						l_target_2.update_edge_point (p2, 0)
-					end
+					an_angle := line_angle (p1.x_precise, p1.y_precise, p2.x_precise, p2.y_precise)
+					l_source.update_edge_point (p1, an_angle)
+					an_angle := pi + an_angle
+					l_target.update_edge_point (p2, an_angle)
+				elseif attached source as l_source_2 then
+					p1 := line.point_array.item (0)
+					p1.set (l_source_2.port_x, l_source_2.port_y)
+					l_source_2.update_edge_point (p1, 0)
+				elseif attached target as l_target_2 then
+					p2 := line.point_array.item (1)
+					p2.set (l_target_2.port_x, l_target_2.port_y)
+					l_target_2.update_edge_point (p2, 0)
+				end
 
-					line.invalidate
-					line.center_invalidate
-					if is_label_shown then
-						name_label.set_point_position (line.x, line.y)
-					end
-				else
-					if attached source as l_source_3 then
-						source_size := l_source_3.size
-						reflexive.set_x_y (source_size.right + reflexive.radius1, source_size.top + source_size.height // 2)
-					end
-					if is_label_shown then
-						name_label.set_point_position (reflexive.x + reflexive.radius1, reflexive.y)
-					end
+				line.invalidate
+				line.center_invalidate
+				if is_label_shown then
+					name_label.set_point_position (line.x, line.y)
 				end
 			else
-				check attached_model : false end -- Implied by precondition model_attached
-				-- if model is not attached the precondtion is not satisfied  and we just ignore the call to update since the behaviour is undefined.
+				if attached source as l_source_3 then
+					source_size := l_source_3.size
+					reflexive.set_x_y (source_size.right + reflexive.radius1, source_size.top + source_size.height // 2)
+				end
+				if is_label_shown then
+					name_label.set_point_position (reflexive.x + reflexive.radius1, reflexive.y)
+				end
 			end
 			is_update_required := False
 		end
@@ -168,7 +165,7 @@ feature {NONE} -- Implementation
 	on_is_directed_change
 			-- `model'.`is_directed' changed.
 		do
-			if attached model as l_model and then l_model.is_directed then
+			if model.is_directed then
 				line.enable_end_arrow
 			else
 				line.disable_end_arrow
@@ -182,11 +179,12 @@ feature {NONE} -- Implementation
 	new_filled_list (n: INTEGER): like Current
 			-- New list with `n' elements.
 		do
-			create Result.make_filled (n)
+			check unimplemented: False then end
 		end
 
 invariant
 	line_not_void: line /= Void
+	mdeol_not_void: model /= Void
 
 note
 	copyright:	"Copyright (c) 1984-2014, Eiffel Software and others"
