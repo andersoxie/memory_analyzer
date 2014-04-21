@@ -82,7 +82,6 @@ feature {NONE} -- Implementation
 		deferred
 		ensure
 			result_not_void: Result /= Void
-			not_result_is_empty: not Result.is_empty
 		end
 
 	image_matrix: EV_PIXMAP

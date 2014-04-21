@@ -73,11 +73,8 @@ feature  -- Singletons
 			-- MEMORY_TOOL_WINDOW instance
 		require
 			set: is_main_window_set
-		local
-			l_item: detachable MA_WINDOW
 		do
-			l_item := internal_main_window.item
-			if attached l_item as l_i then
+			if attached internal_main_window.item as l_item then
 				Result := l_item
 			else
 				check l_item_attached : false end -- Implied by precondition

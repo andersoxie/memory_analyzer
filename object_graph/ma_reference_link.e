@@ -101,8 +101,6 @@ feature -- Element change
 feature {EG_FIGURE, EG_FIGURE_WORLD} -- Update
 
 	update
-		require else
-			model_attached : attached model
 			-- Some properties may have changed.
 		local
 			p1, p2: EV_COORDINATE

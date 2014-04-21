@@ -43,7 +43,7 @@ feature -- Basic operations
 				Result := l_r
 			else
 				check attached_l_result: false end -- Satisfy void-safe compiler
-				create Result -- If no precondtions or checks are switch on this statement will be executed. However, since it is not implemented according to first check statement it might be that we should remove the feature?
+				create Result
 			end
 --			node_name := node.name
 --			if node_name.is_equal ("ELLIPSE_NODE") then

@@ -67,18 +67,12 @@ feature -- Element change
 		local
 			l_hash: detachable like references_by_referee
 		do
-			if not relations.has_key (a_referee) then
-				create l_hash.make (20)
-					-- Here we prevent extending pairs exsited or with equivalent key and value.
-				relations.force (l_hash, a_referee)
-			else
-				l_hash := relations.found_item
+			l_hash := relations.item (a_referee)
+			if l_hash = Void then
+			  create l_hash.make (20)
+			  relations.force (l_hash, a_referee)
 			end
-			if attached l_hash as l_h then
-				l_h.force ([a_referee, data], a_referrer)
-			else
-				check attached_l_hash : false end -- Implied by previous if clause
-			end
+			l_hash.force ([a_referee, data], a_referrer)
 		end
 
 feature -- Removal
@@ -91,15 +85,11 @@ feature -- Removal
 		local
 			l_hash: detachable like references_by_referee
 		do
-			if relations.has_key (a_referee) then
-				l_hash := relations.found_item
-				if attached l_hash as l_h then
-					l_h.remove (a_referrer)
-					if l_h.is_empty then
-						relations.remove (a_referee)
-					end
-				else
-					check attached_l_hash : false end -- Implied by `has_key'
+			l_hash := relations.item (a_referee)
+			if  l_hash /= Void then
+				l_hash.remove (a_referrer)
+				if l_hash.is_empty then
+					relations.remove (a_referee)
 				end
 			end
 		end

@@ -114,12 +114,8 @@ feature -- Command
 
 				l_count := l_new_table.item_for_iteration
 
-				if finding_route_to_once then
-					if attached l_map as l_m then
-						add_to_reference_table (l_new_table.key_for_iteration, l_m)
-					else
-						check attached_l_map : false end -- Implied by `finding_route_to_once'
-					end
+				if l_map /= Void then
+					add_to_reference_table (l_new_table.key_for_iteration, l_map)
 				end
 
 					-- Compute `l_delta' now.
@@ -154,15 +150,16 @@ feature -- Command
 				end
 			end
 
-			if finding_route_to_once then
+			if l_map /= Void then
 				memory.collection_on
 				last_selected_object := Void
 			end
 
 			last_table := l_new_table
 			grid_data := l_data
-
-			update_grid_content
+			if attached grid_data as l_grid_data then
+				update_grid_content (l_grid_data)
+			end
 		end
 
 	set_finding_route_to_once (a_b: BOOLEAN)
@@ -215,17 +212,15 @@ feature {NONE} -- Implementation
 					sorted_column := a_column_index
 					sorting_order := False
 				end
-				if grid_data /= Void then
-					sort_data
-					update_grid_content
+				if attached grid_data as l_grid_data then
+					sort_data (l_grid_data)
+					update_grid_content (l_grid_data)
 				end
 			end
 		end
 
-	sort_data
+	sort_data( a_grid_data : attached like grid_data)
 			-- Sort `grid_data' according to `sorted_column' and `sorting_order'.
-		require
-			grid_data_not_void: grid_data /= Void
 		local
 			l_sorter: QUICK_SORTER [like row_data]
 			l_agent_sorter: AGENT_EQUALITY_TESTER [like row_data]
@@ -237,17 +232,11 @@ feature {NONE} -- Implementation
 				when 3 then create l_agent_sorter.make (agent sort_on_delta)
 			end
 			create l_sorter.make (l_agent_sorter)
-			if attached grid_data as l_grid_data  then
-				l_sorter.sort (l_grid_data)
-			else
-				check attached_grid_data : false  end -- Implied by precondition
-			end
+			l_sorter.sort (a_grid_data)
 		end
 
-	update_grid_content
-			-- Fill grid using `grid_data'
-		require
-			grid_data_not_void: attached grid_data
+	update_grid_content ( a_grid_data : attached like grid_data)
+			-- Fill grid using `a_grid_data'
 		local
 			l_row_data: like row_data
 			l_item: MA_GRID_LABEL_ITEM
@@ -256,58 +245,54 @@ feature {NONE} -- Implementation
 			l_row: EV_GRID_ROW
 			l_grid: like object_grid
 		do
-			if attached grid_data as l_data then
-				from
-					l_grid := object_grid
-					grid_util.grid_remove_and_clear_all_rows (l_grid)
-					i := 1
-					l_data.start
-				until
-					l_data.after
-				loop
-					l_row_data := l_data.item_for_iteration
-					if not filter.filter_class (l_row_data.type_name) then
-						l_str := l_row_data.type_name
-						check
-							l_str_not_void: l_str /= Void
-						end
-
-							-- Set type name
-						create l_item.make_with_text (l_str)
-						l_item.set_pixmap (icons.object_grid_class_icon)
-						l_grid.set_item (1, i, l_item)
-
-							-- Set count
-						l_count := l_row_data.number_of_objects
-						create l_item.make_with_text (l_count.out)
-						l_grid.set_item (2, i, l_item)
-						if l_count >= 1 then
-							l_row := l_grid.row (i)
-							l_row.ensure_expandable
-							l_row.expand_actions.extend (agent on_expand_actions_for_type (l_row_data.type_id, l_row))
-						end
-
-							-- Set delta
-						l_delta := l_row_data.variation_since_last_time
-						if l_delta /= 0 then
-							create l_item.make_with_text (l_delta.out)
-							if l_delta > 0 then
-								l_item.set_foreground_color (increased_color)
-							else
-								l_item.set_foreground_color (decreased_color)
-							end
-							l_grid.set_item (3, i, l_item)
-						end
-						i := i + 1
+			from
+				l_grid := object_grid
+				grid_util.grid_remove_and_clear_all_rows (l_grid)
+				i := 1
+				a_grid_data.start
+			until
+				a_grid_data.after
+			loop
+				l_row_data := a_grid_data.item_for_iteration
+				if not filter.filter_class (l_row_data.type_name) then
+					l_str := l_row_data.type_name
+					check
+						l_str_not_void: l_str /= Void
 					end
-					l_data.forth
+
+						-- Set type name
+					create l_item.make_with_text (l_str)
+					l_item.set_pixmap (icons.object_grid_class_icon)
+					l_grid.set_item (1, i, l_item)
+
+						-- Set count
+					l_count := l_row_data.number_of_objects
+					create l_item.make_with_text (l_count.out)
+					l_grid.set_item (2, i, l_item)
+					if l_count >= 1 then
+						l_row := l_grid.row (i)
+						l_row.ensure_expandable
+						l_row.expand_actions.extend (agent on_expand_actions_for_type (l_row_data.type_id, l_row))
+					end
+
+						-- Set delta
+					l_delta := l_row_data.variation_since_last_time
+					if l_delta /= 0 then
+						create l_item.make_with_text (l_delta.out)
+						if l_delta > 0 then
+							l_item.set_foreground_color (increased_color)
+						else
+							l_item.set_foreground_color (decreased_color)
+						end
+						l_grid.set_item (3, i, l_item)
+					end
+					i := i + 1
 				end
-					-- We launch a collection, so that no bad information is displayed
-					-- for referers.
-				system_util.collect
-			else
-				check attached_data : false end -- Implied by precondition `grid_data_not_void'
+				a_grid_data.forth
 			end
+				-- We launch a collection, so that no bad information is displayed
+				-- for referers.
+			system_util.collect
 		end
 
 	on_expand_actions_for_type (a_dynamic_type: INTEGER; a_parent_row: EV_GRID_ROW)
@@ -453,12 +438,8 @@ feature {NONE} -- Implementation
 	add_to_reference_table (a_object_id: INTEGER; a_map: HASH_TABLE [ARRAYED_LIST [ANY], INTEGER_32])
 			-- Added all referer relations of objects of `a_object_id'.
 		require
-			tables_created: reference_table /= Void and name_table /= Void
 			a_map_not_void: a_map /= Void
 			has: a_map.has (a_object_id)
-			set: attached object_table
-			set: attached name_table
-			set: attached reference_table
 		local
 			l_name, l_field_name: STRING
 			l_int: INTERNAL
@@ -536,16 +517,12 @@ feature {NONE} -- Implementation
 					l_objects_of_type.forth
 				end
 			else
-				check attached_objects_of_type : false end -- Implied by precondition `has'
-				check attached_object_table : false end -- Implied by precondition `set'
-				check attached_reference_table : false end -- Implied by precondition `set'						
+				check has_object: False end
 			end
 		end
 
 	build_once_object_table
 			-- Record once object in `once_object_table'.
-		require
-			set: attached object_table
 		local
 			l_obj: like once_objects
 			i: INTEGER
@@ -554,25 +531,23 @@ feature {NONE} -- Implementation
 			l_int: INTERNAL
 			l_once_object_table: like once_object_table
 		do
-			create l_int
-			create l_once_object_table.make (100)
-			once_object_table := l_once_object_table
-			l_obj := once_objects
-			from
-				i := l_obj.lower
-			until
-				i > l_obj.upper
-			loop
-				l_item := l_obj.item (i)
-				if l_item /= Void then
-					if attached object_table as l_object_table then
-						l_index := l_object_table.index (l_item)
-						l_once_object_table.force (l_index, l_index)
-					else
-						check attached_l_object_table : false end -- Implied by precondition `set'
+			if attached object_table as l_object_table then
+				create l_int
+				create l_once_object_table.make (100)
+				once_object_table := l_once_object_table
+				l_obj := once_objects
+				from
+					i := l_obj.lower
+				until
+					i > l_obj.upper
+				loop
+					l_item := l_obj.item (i)
+					if l_item /= Void then
+							l_index := l_object_table.index (l_item)
+							l_once_object_table.force (l_index, l_index)
 					end
+					i := i + 1
 				end
-				i := i + 1
 			end
 		end
 
@@ -603,17 +578,14 @@ feature {NONE} -- Fields
 	row_data: TUPLE [type_name: STRING; number_of_objects: INTEGER; variation_since_last_time: INTEGER; type_id: INTEGER]
 			-- Type for the data inserted in `output_grid'
 			-- It is [type_name, number_of_objects, variation_since_last_time, type_id].
-		local
-			l_result: detachable like row_data
+		require
+			not_callable : False
 		do
-			check False end -- Anchor type only
-			if attached l_result as l_res then
-				Result := l_res
-			else
-				check attached_l_result : false  end -- Satisfy void-safe compiler
-				create Result
-			end
+			check False then end
+		ensure
+			for_typing_only : False
 		end
+
 
 	object_grid: EV_GRID
 			-- the main grid to show object snapshot datas
