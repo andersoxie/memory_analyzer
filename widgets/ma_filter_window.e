@@ -182,13 +182,18 @@ feature {NONE} -- Implementation
 		local
 			l_last_row: detachable EV_GRID_ROW
 		do
-			add_new_row (Void)
+			add_new_row (Void) -- Construct a new row where the first item is editable.
 			l_last_row := grid.last_visible_row
-			check attached l_last_row end -- FIXME: Implied by ...?
-			if attached {EV_GRID_EDITABLE_ITEM} l_last_row.item (1) as l_item then
-				l_item.activate
+			if attached l_last_row as l_last_r then
+				if attached {EV_GRID_EDITABLE_ITEM} l_last_row.item (1) as l_item then
+					l_item.activate
+				else
+					check not_editable_item: False end
+					-- FIXMED: Implied by ...? Do we miss a precondition or invariant?
+				end
 			else
-				check not_editable_item: False end
+				check l_last_row_attached : false end
+				-- FIXME: Implied by ...? Do we miss a precondition or invariant?			
 			end
 		end
 
@@ -291,13 +296,11 @@ feature {NONE} -- Implementation
 	a_filter_data: TUPLE [class_name: STRING; selected: BOOLEAN; description: STRING]
 			-- A anchor, should not be called
 		require
-			False
-		local
-			l_result: detachable like a_filter_data
+			not_callable : False
 		do
-			check False end -- Anchor type only
-			check attached l_result end -- Satisfy void-safe compiler
-			Result := l_result
+			check False then end
+		ensure
+			for_typing_only : False
 		end
 
 	hash_table_datas_to_arrayed_list_datas: MA_ARRAYED_LIST_STORABLE [like a_filter_data]
@@ -354,7 +357,7 @@ invariant
 	grid_not_void: grid /= Void
 
 note
-	copyright:	"Copyright (c) 1984-2012, Eiffel Software and others"
+	copyright:	"Copyright (c) 1984-2014, Eiffel Software and others"
 	license:	"Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 	source: "[
 			Eiffel Software

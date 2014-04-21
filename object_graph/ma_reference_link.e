@@ -12,14 +12,12 @@ inherit
 	EG_LINK_FIGURE
 		redefine
 			default_create,
-			xml_node_name
+			xml_node_name,
+			model
 		end
 
 create
 	make_with_model
-
-create {MA_REFERENCE_LINK}
-	make_filled
 
 feature {NONE} -- Initialization
 
@@ -39,8 +37,8 @@ feature {NONE} -- Initialization
 		require
 			a_model_not_void: a_model /= Void
 		do
-			default_create
 			model := a_model
+			default_create
 			initialize
 
 			if a_model.is_directed then
@@ -59,6 +57,10 @@ feature {NONE} -- Initialization
 		end
 
 feature -- Access
+
+	model: EG_LINK
+ 			-- <Precursor>
+ 			-- Not useful redefinition if the library rely on a graph library with `model' attached.
 
 	set_color
 			-- Set the color of the reference line.
@@ -104,11 +106,8 @@ feature {EG_FIGURE, EG_FIGURE_WORLD} -- Update
 			p1, p2: EV_COORDINATE
 			an_angle: DOUBLE
 			source_size: EV_RECTANGLE
-			l_model: like model
 		do
-			l_model := model
-			check attached l_model end -- FIXME: Implied by ...?
-			if not l_model.is_reflexive then
+			if not model.is_reflexive then
 				if attached source as l_source and then attached target as l_target then
 					p1 := line.point_array.item (0)
 					p2 := line.point_array.item (1)
@@ -164,7 +163,7 @@ feature {NONE} -- Implementation
 	on_is_directed_change
 			-- `model'.`is_directed' changed.
 		do
-			if attached model as l_model and then l_model.is_directed then
+			if model.is_directed then
 				line.enable_end_arrow
 			else
 				line.disable_end_arrow
@@ -178,21 +177,22 @@ feature {NONE} -- Implementation
 	new_filled_list (n: INTEGER): like Current
 			-- New list with `n' elements.
 		do
-			create Result.make_filled (n)
+			check unimplemented: False then end
 		end
 
 invariant
 	line_not_void: line /= Void
+	mdeol_not_void: model /= Void
 
 note
-	copyright:	"Copyright (c) 1984-2006, Eiffel Software and others"
+	copyright:	"Copyright (c) 1984-2014, Eiffel Software and others"
 	license:	"Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 	source: "[
-			 Eiffel Software
-			 356 Storke Road, Goleta, CA 93117 USA
-			 Telephone 805-685-1006, Fax 805-685-6869
-			 Website http://www.eiffel.com
-			 Customer support http://support.eiffel.com
+			Eiffel Software
+			5949 Hollister Ave., Goleta, CA 93117 USA
+			Telephone 805-685-1006, Fax 805-685-6869
+			Website http://www.eiffel.com
+			Customer support http://support.eiffel.com
 		]"
 
 

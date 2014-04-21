@@ -21,9 +21,6 @@ inherit
 create
 	make_with_model
 
-create {MA_OBJECT_NODE}
-	make_filled
-
 feature {NONE} -- Initialization
 
 	default_create
@@ -60,7 +57,7 @@ feature {NONE} -- Initialization
 
 feature -- Access
 
-	model: detachable EG_NODE
+	model: EG_NODE
 			-- Model `Current' is a view for.
 
 	port_x: INTEGER
@@ -178,21 +175,21 @@ feature {NONE} -- Implementation
 	new_filled_list (n: INTEGER): like Current
 			-- New list with `n' elements.
 		do
-			create Result.make_filled (n)
+			check unimplemented: False then end
 		end
 
 invariant
 	node_figure_not_void: node_figure /= Void
 
 note
-	copyright:	"Copyright (c) 1984-2006, Eiffel Software and others"
+	copyright:	"Copyright (c) 1984-2014, Eiffel Software and others"
 	license:	"Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 	source: "[
-			 Eiffel Software
-			 356 Storke Road, Goleta, CA 93117 USA
-			 Telephone 805-685-1006, Fax 805-685-6869
-			 Website http://www.eiffel.com
-			 Customer support http://support.eiffel.com
+			Eiffel Software
+			5949 Hollister Ave., Goleta, CA 93117 USA
+			Telephone 805-685-1006, Fax 805-685-6869
+			Website http://www.eiffel.com
+			Customer support http://support.eiffel.com
 		]"
 
 

@@ -34,13 +34,13 @@ feature {NONE} -- Implementation
 
 	pixmap_path: PATH
 			-- Path containing all of the Memory Analyzer icons
-		local
-			l_result: like internal_pixmap_path
-		do
-			l_result := internal_pixmap_path
-			check attached l_result end -- FIXME: Implied by ...?
+	do
+		if attached internal_pixmap_path as l_result then
 			Result := l_result
+		else
+			create Result.make_current
 		end
+	end
 
 	internal_pixmap_path: detachable like pixmap_path
 			-- Path where have icons image.
@@ -263,7 +263,7 @@ feature {NONE} -- Icons' Names
 			-- Icon names
 
 note
-	copyright:	"Copyright (c) 1984-2012, Eiffel Software and others"
+	copyright:	"Copyright (c) 1984-2014, Eiffel Software and others"
 	license:	"Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 	source: "[
 			Eiffel Software

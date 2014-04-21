@@ -120,14 +120,16 @@ feature -- Command
 		local
 			l_state_1, l_state_2: MA_MEMORY_STATE
 			l_info_dlg: EV_INFORMATION_DIALOG
+			l_increased: attached like grid_data_increased
 		do
 			if grid_from_state.has_selected_row then
 				if grid_to_state.has_selected_row then
 					l_state_2 := states.i_th (grid_to_state.selected_rows.first.index)
 					l_state_1 := states.i_th (grid_from_state.selected_rows.first.index)
 					grid_util.grid_remove_and_clear_all_rows (grid_changed)
-					grid_data_increased := l_state_1.compare (l_state_2)
-					update_grid_increased_content
+					l_increased := l_state_1.compare (l_state_2)
+					grid_data_increased := l_increased
+					update_grid_increased_content (l_increased)
 				else
 					create l_info_dlg.make_with_text ("Please select a To State from the right grid.")
 					l_info_dlg.show_relative_to_window (main_window)
@@ -181,29 +183,24 @@ feature -- Command
 
 feature {NONE} -- Implemention
 
-	update_grid_increased_content
+	update_grid_increased_content( a_grid_data_increased : attached like grid_data_increased)
 			-- Show the increased objects in the bottom result grid.
-		require
-			set: attached grid_data_increased
 		local
 			l_int: INTEGER
 			l_item: EV_GRID_LABEL_ITEM
 			l_i: INTEGER
-			l_grid_data_increased: like grid_data_increased
 		do
 			from
-				l_grid_data_increased := grid_data_increased
-				check attached l_grid_data_increased end -- Implied by precondition `set'
-				l_grid_data_increased.start
+				a_grid_data_increased.start
 			until
-				l_grid_data_increased.after
+				a_grid_data_increased.after
 			loop
-				if not filter.filter_class (l_grid_data_increased.item_for_iteration.text) then
+				if not filter.filter_class (a_grid_data_increased.item_for_iteration.text) then
 					l_i := l_i + 1
-					create l_item.make_with_text (l_grid_data_increased.item_for_iteration.text)
+					create l_item.make_with_text (a_grid_data_increased.item_for_iteration.text)
 					l_item.set_pixmap (icons.object_grid_class_icon)
 					grid_changed.set_item (1, l_i, l_item)
-					l_int := l_grid_data_increased.item_for_iteration.nb
+					l_int := a_grid_data_increased.item_for_iteration.nb
 					create l_item.make_with_text (l_int.out)
 					if l_int > 0 then
 						l_item.set_foreground_color (increased_color)
@@ -212,7 +209,7 @@ feature {NONE} -- Implemention
 					end
 					grid_changed.set_item (2, l_i, l_item)
 				end
-				l_grid_data_increased.forth
+				a_grid_data_increased.forth
 			end
 		end
 
@@ -273,33 +270,27 @@ feature {NONE} -- Implemention
 					sorted_column := a_column_index
 					sorting_order := False
 				end
-				if grid_data_increased /= Void then
-					sort_data
-					update_grid_increased_content
+				if attached grid_data_increased as l_grid_data_increased then
+					sort_data( l_grid_data_increased)
+					update_grid_increased_content (l_grid_data_increased)
 				end
 			end
 		end
 
-	handle_pick_item (a_item: EV_GRID_LABEL_ITEM): MA_CLASS_STONE
-			-- User pick a item from grid to filter.
-		local
-			l_result: detachable like handle_pick_item
+
+	handle_pick_item (a_item: detachable EV_GRID_ITEM): detachable MA_CLASS_STONE
+			-- User pick an item from grid to filter.
 		do
-			if a_item /= Void and a_item.column.index = 1 then
-				l_result := create {MA_CLASS_STONE}.make (a_item.text)
+			if attached {EV_GRID_LABEL_ITEM} a_item as l_label and then l_label.column.index = 1 then
+			   create {MA_CLASS_STONE} Result.make (l_label.text)
 			end
-			check attached l_result end -- FIXME: Implied by ...?
-			Result := l_result
 		end
 
-	sort_data
+	sort_data (a_grid_data_increased : attached like grid_data_increased)
 			-- Sort `grid_data' according to `sorted_column' and `sorting_order'.
-		require
-			set: attached grid_data_increased
 		local
 			l_sorter: QUICK_SORTER [like grid_data_increased_row]
 			l_agent_sorter: AGENT_EQUALITY_TESTER [like grid_data_increased_row]
-			l_grid_data_increased: like grid_data_increased
 		do
 			inspect
 				sorted_column
@@ -307,9 +298,7 @@ feature {NONE} -- Implemention
 			when 2 then create l_agent_sorter.make (agent sort_on_count)
 			end
 			create l_sorter.make (l_agent_sorter)
-			l_grid_data_increased := grid_data_increased
-			check attached l_grid_data_increased end -- Implied by precondition
-			l_sorter.sort (l_grid_data_increased)
+			l_sorter.sort (a_grid_data_increased)
 		end
 
 	sorting_order: BOOLEAN
@@ -348,13 +337,11 @@ feature {NONE} -- Implemention
 			-- Anchor type should not called.
 			-- first INTEGER is increased object count, second INTEGER is the increased objects type id
 		require
-			False
-		local
-			l_result: detachable like grid_data_increased_row
+			not_callable : False
 		do
-			check False end -- Anchor type only
-			check attached l_result end -- Satisfy void-safe compiler
-			Result := l_result
+			check False then end
+		ensure
+			for_typing_only : False
 		end
 
 	grid_data_increased: detachable ARRAYED_LIST [like grid_data_increased_row]
@@ -367,13 +354,11 @@ feature {NONE} -- Implemention
 			-- Type for the data inserted in grid
 			-- It is [Object Type Name, Eiffel Memory Used, C Memory Used, TypeId].
 		require
-			False
-		local
-			l_result: detachable like row_data
+			not_callable : False
 		do
-			check False end -- Anchor type only
-			check attached l_result end -- Satisfy void-safe compiler
-			Result := l_result
+			check False then end
+		ensure
+			for_typing_only : False
 		end
 
 	grid_from_state, grid_to_state: EV_GRID -- Two grid show states.
@@ -393,7 +378,7 @@ invariant
 	grid_increased_not_void: grid_changed /= Void
 	grid_data_not_void: grid_data /= Void
 note
-	copyright:	"Copyright (c) 1984-2013, Eiffel Software and others"
+	copyright:	"Copyright (c) 1984-2014, Eiffel Software and others"
 	license:	"Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 	source: "[
 			Eiffel Software
