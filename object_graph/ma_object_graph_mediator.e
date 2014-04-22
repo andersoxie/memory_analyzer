@@ -60,37 +60,25 @@ feature -- Command
 			end
 		end
 
-	find_draw_node_by_object (a_object: ANY): EG_NODE
+	find_draw_node_by_object (a_object: ANY): detachable EG_NODE
 			-- Find in `objects_already_draw' return a EG_NODE which corresponding to object.
 		require
 			a_object_not_void : a_object /= Void
 		local
 			l_obj_with_node : TUPLE [obj: ANY; node: EG_NODE]
-			l_result: detachable like find_draw_node_by_object
 		do
 			from
 				objects_already_draw.start
 			until
-				l_result /= Void or objects_already_draw.after
+				Result /= Void or objects_already_draw.after
 			loop
 				l_obj_with_node := objects_already_draw.item_for_iteration
 					-- Test the address.
 				if l_obj_with_node.obj = a_object then
-					l_result := l_obj_with_node.node
-					check
-						result_not_void: l_result /= Void
-					end
+					Result := l_obj_with_node.node
 				end
 				objects_already_draw.forth
 			end
-			if attached l_result as l_r then
-				Result := l_r
-			else
-				check attached_l_result : false end -- FIXME: Implied by ...?
-				create Result.default_create --  FIXME: Since we do not have a (clear) precondition we are not allowed to return like this. Need precondition.
-			end
-		ensure
-			result_not_void : Result /= Void
 		end
 
 	object_already_draw (a_object: ANY): BOOLEAN
@@ -251,28 +239,26 @@ feature -- Implementation for agents
 			l_object: ANY
 			l_refers: SPECIAL [ANY]
 			l_int,refer_count: INTEGER
-			l_link_node: EG_NODE
 			l_linkable: EG_LINKABLE
 			l_info_dlg: EV_INFORMATION_DIALOG
 			l_item: detachable TUPLE [obj: ANY; node: EG_NODE]
 			l_last_drawn_node: like last_drawn_node
 		do
 			l_nodes := world.selected_figures
-			if l_nodes.count > 0 then
-				l_node := l_nodes.first
-				l_item := objects_already_draw.item (l_node)
-				if attached l_item as l_i then
-					l_object :=	l_i.obj
-					l_refers := memory.referers (l_object)
-					from
-						l_int := 0
-						refer_count := l_refers.count
-					until
-						l_int = refer_count
-					loop
-						if object_already_draw(l_refers.item (l_int))  then
-							-- add link to two already drawed object
-							l_link_node := find_draw_node_by_object(l_refers.item (l_int))
+			l_node := l_nodes.first
+			l_item := objects_already_draw.item (l_node)
+			if attached l_item as l_i then
+				l_object :=	l_i.obj
+				l_refers := memory.referers (l_object)
+				from
+					l_int := 0
+					refer_count := l_refers.count
+				until
+					l_int = refer_count
+				loop
+					if object_already_draw(l_refers.item (l_int))  then
+						-- add link to two already drawed object
+						if attached find_draw_node_by_object(l_refers.item (l_int)) as  l_link_node then
 							l_item := objects_already_draw.item (l_node)
 							if attached l_item as l_it then
 								l_linkable := l_it.node
@@ -283,32 +269,29 @@ feature -- Implementation for agents
 							else
 								check attached_l_item : false end -- FIXME: Implied by that we iterate over the available number of items.
 							end
-						else
-							add_node_random_pos(l_refers.item (l_int))
-							l_item := objects_already_draw.item (l_node)
-							if attached l_item as l_it then
-								l_linkable := l_it.node
-								check
-									l_linkable /= Void
-								end
-								l_last_drawn_node := last_drawn_node
-								if attached l_last_drawn_node as l_last then
-									add_link (l_linkable, l_last)
-								else
-									check attachedl_last_drawn_node : false end -- FIXME: Implied by ...? Can not understand if this is impleied or not.
-								end
-							else
-								check attached_l_item : false end -- Implied by that we iterate over the available number of items.
-							end
 						end
-						l_int := l_int + 1
+					else
+						add_node_random_pos(l_refers.item (l_int))
+						l_item := objects_already_draw.item (l_node)
+						if attached l_item as l_it then
+							l_linkable := l_it.node
+							check
+								l_linkable /= Void
+							end
+							l_last_drawn_node := last_drawn_node
+							if attached l_last_drawn_node as l_last then
+								add_link (l_linkable, l_last)
+							else
+								check attachedl_last_drawn_node : false end -- FIXME: Implied by ...?
+							end
+						else
+							check attached_l_item : false end -- Implied by that we iterate over the available number of items.
+						end
 					end
-				else
-					check attached_l_item : false  end -- FIXME: Implied by precondition
+					l_int := l_int + 1
 				end
 			else
-				create l_info_dlg.make_with_text ("Please select a node first.")
-				l_info_dlg.show_relative_to_window (main_window)
+				check attached_l_item : false  end
 			end
 			world.update
 		end

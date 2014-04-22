@@ -47,14 +47,12 @@ feature -- Measurrment
 
 	item_found_count: INTEGER
 			-- after routine found_type, return the count of founded item
-		require
-			founded_type_attached: attached founded_type
 		do
 			if attached item_founded as l_item_founded then
 				Result := l_item_founded.count_in_system
-			else
-				check attached_item_founded : false end -- Implied by precondition
 			end
+		ensure
+			 item_found_count_non_negative: Result >= 0
 		end
 
 	memory_used_eiffel: INTEGER
@@ -163,15 +161,12 @@ feature {NONE} -- Implementation
 
 	state: TUPLE [type_name: STRING; count_in_system: INTEGER]
 			-- [type_name_of_type, number of instances of type_name_of_type present in system]
-		local
-			l_result: detachable like state
+		require
+			not_callable : False
 		do
-			check False end -- Anchor type only
-			if attached l_result as l_res then
-				Result := l_res
-			else
-				create Result
-			end
+			check False then end
+		ensure
+			for_typing_only : False
 		end
 
 	objects_states: ARRAYED_LIST [like state];

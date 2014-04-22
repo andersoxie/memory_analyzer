@@ -94,32 +94,27 @@ feature {NONE} -- Implementation
 			-- Draw the pixmap which represent whether current is selected.
 		require
 			a_drawable_not_void: a_drawable /= Void
-		local
-			l_parent_2: detachable EV_CONTAINER
 		do
-			if is_selected and attached parent as l_parent then
-				if l_parent.has_focus then
-					a_drawable.set_foreground_color (l_parent.focused_selection_color)
-				else
-					a_drawable.set_foreground_color (l_parent.non_focused_selection_color)
-				end
-			else
-				if attached row.background_color as l_row_background_color then
-					a_drawable.set_foreground_color (l_row_background_color)
-				else
-					l_parent_2 := parent
-					if attached l_parent_2 as l_p then
-						a_drawable.set_foreground_color (l_p.background_color)
+			if attached parent as l_parent then
+				if is_selected then
+					if l_parent.has_focus then
+						a_drawable.set_foreground_color (l_parent.focused_selection_color)
 					else
-						check l_parent_2_attached : false end -- FIXME: Implied by ...? -- I have tried to understand if the state of the current instance tells us that this will not happen. Next step would be to define a precondition or invariant. At least the behaviour is not worse than before this change.
+						a_drawable.set_foreground_color (l_parent.non_focused_selection_color)
+					end
+				else
+					if attached row.background_color as l_row_background_color then
+						a_drawable.set_foreground_color (l_row_background_color)
+					else
+						a_drawable.set_foreground_color (l_parent.background_color)
 					end
 				end
-			end
-			a_drawable.fill_rectangle (0, 0, a_drawable.width, a_drawable.height)
-			if internal_selected then
-				draw_selected (a_drawable)
-			else
-				draw_unselected (a_drawable)
+				a_drawable.fill_rectangle (0, 0, a_drawable.width, a_drawable.height)
+				if internal_selected then
+					draw_selected (a_drawable)
+				else
+					draw_unselected (a_drawable)
+				end
 			end
 		end
 

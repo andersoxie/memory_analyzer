@@ -34,19 +34,13 @@ feature {NONE} -- Implementation
 
 	pixmap_path: PATH
 			-- Path containing all of the Memory Analyzer icons
-		require else
-			attached_pixmap_path : attached internal_pixmap_path
-		local
-			l_result: like internal_pixmap_path
-		do
-			l_result := internal_pixmap_path
-			if attached l_result as l_r then --
-				Result := l_r
-			else
-				check l_result_attached : false end --  Implied by precondition attached_pixmap_path
-				create Result.make_empty -- Since the behaviour is undefined when precondition is not satisfied we are allowed to return an empty path
-			end
+	do
+		if attached internal_pixmap_path as l_result then
+			Result := l_result
+		else
+			create Result.make_current
 		end
+	end
 
 	internal_pixmap_path: detachable like pixmap_path
 			-- Path where have icons image.

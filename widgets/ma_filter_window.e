@@ -182,7 +182,7 @@ feature {NONE} -- Implementation
 		local
 			l_last_row: detachable EV_GRID_ROW
 		do
-			add_new_row (Void)
+			add_new_row (Void) -- Construct a new row where the first item is editable.
 			l_last_row := grid.last_visible_row
 			if attached l_last_row as l_last_r then
 				if attached {EV_GRID_EDITABLE_ITEM} l_last_row.item (1) as l_item then
@@ -296,17 +296,11 @@ feature {NONE} -- Implementation
 	a_filter_data: TUPLE [class_name: STRING; selected: BOOLEAN; description: STRING]
 			-- A anchor, should not be called
 		require
-			False
-		local
-			l_result: detachable like a_filter_data
+			not_callable : False
 		do
-			check False end -- Anchor type only
-			if attached l_result as l_res then
-				Result := l_result
-			else -- Satisfy void-safe compile. Since precondition states false the behaviour is not defined if called without precondition and checks.
-				check l_result_attached : false end
-				create Result
-			end
+			check False then end
+		ensure
+			for_typing_only : False
 		end
 
 	hash_table_datas_to_arrayed_list_datas: MA_ARRAYED_LIST_STORABLE [like a_filter_data]
