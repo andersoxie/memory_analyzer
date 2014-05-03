@@ -14,37 +14,30 @@ inherit
 feature -- Basic operations
 
 	new_node_figure (a_node: EG_NODE): EG_LINKABLE_FIGURE
-			-- Create a node figure for `a_node'.
+			-- <Precursor>
 		do
 			Result := create {MA_OBJECT_NODE}.make_with_model (a_node)
 		end
 
 	new_cluster_figure (a_cluster: EG_CLUSTER): EG_CLUSTER_FIGURE
-			-- Create a cluster figure for `a_cluster'.
+			-- <Precursor>
 		do
 			Result := create {EG_SIMPLE_CLUSTER}.make_with_model (a_cluster)
 		end
 
-	new_link_figure (a_link: EG_LINK): EG_LINK_FIGURE
-			-- Create a link figure for `a_link'.
+	new_link_figure (a_link: EG_LINK; a_source, a_target: EG_LINKABLE_FIGURE): EG_LINK_FIGURE
+			-- <Precursor>
 		do
-			Result := create {MA_REFERENCE_LINK}.make_with_model (a_link)
+			Result := create {MA_REFERENCE_LINK}.make (a_link, a_source, a_target)
 		end
 
-	model_from_xml (node: attached like xml_element_type): EG_ITEM
-			-- Create an EG_ITEM from `node' if possible.
+	model_from_xml (node: like xml_element_type): EG_ITEM
+			-- <Precursor>
 		local
 --			node_name, source_name, target_name: STRING
 --			a_source, a_target: EG_LINKABLE
-			l_result: detachable like model_from_xml
 		do
-			check not_implemented: False end
-			if attached l_result as l_r then
-				Result := l_r
-			else
-				check attached_l_result: false end -- Satisfy void-safe compiler
-				create Result
-			end
+			check not_implemented: False then end
 --			node_name := node.name
 --			if node_name.is_equal ("ELLIPSE_NODE") then
 --				create {EG_NODE} Result
