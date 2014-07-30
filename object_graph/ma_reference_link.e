@@ -12,12 +12,14 @@ inherit
 	EG_LINK_FIGURE
 		redefine
 			default_create,
-			xml_node_name,
-			model
+			xml_node_name
 		end
 
 create
-	make_with_model
+	make
+
+create {MA_REFERENCE_LINK}
+	make_resized_from
 
 feature {NONE} -- Initialization
 
@@ -32,12 +34,14 @@ feature {NONE} -- Initialization
 			extend (line)
 		end
 
-	make_with_model (a_model: EG_LINK)
-			-- Make a link using `a_model'.
+	make (a_model: EG_LINK; a_source, a_target: like source)
+			-- Make a link using `a_model' as `model', `a_source' as `source' and `a_target' as `target'.
 		require
 			a_model_not_void: a_model /= Void
 		do
 			model := a_model
+			source := a_source
+			target := a_target
 			default_create
 			initialize
 
@@ -54,13 +58,28 @@ feature {NONE} -- Initialization
 			disable_rotating
 
 			update
+		ensure
+			model_set: model = a_model
+			source_set: source = a_source
+			target_set: target = a_target
+			moving_disabled: not is_moving
+			scaling_disabled: not is_scaling
+			rotating_disabled: not is_rotating
+		end
+
+	make_resized_from (a_other: like Current; n: INTEGER)
+			-- Make a link using `a_other'
+			-- and resize the freshly created area with a count of `n'.
+		do
+			make (a_other.model, a_other.source, a_other.target)
+			area_v2 := area_v2.resized_area (n)
+		ensure
+			same_model: model = a_other.model
+			same_source_and_target: source = a_other.source and target = a_other.target
+			area_count: area_v2.count = n
 		end
 
 feature -- Access
-
-	model: EG_LINK
- 			-- <Precursor>
- 			-- Not useful redefinition if the library rely on a graph library with `model' attached.
 
 	set_color
 			-- Set the color of the reference line.
@@ -75,7 +94,7 @@ feature -- Access
 		end
 
 	xml_node_name: STRING
-			-- Name of `xml_element'.
+			-- <Precursor>
 		do
 			Result := "EG_SIMPLE_LINK"
 		end
@@ -101,7 +120,7 @@ feature -- Element change
 feature {EG_FIGURE, EG_FIGURE_WORLD} -- Update
 
 	update
-			-- Some properties may have changed.
+			-- <Precursor>
 		local
 			p1, p2: EV_COORDINATE
 			an_angle: DOUBLE
@@ -149,7 +168,7 @@ feature {EG_FIGURE, EG_FIGURE_WORLD} -- Update
 feature {NONE} -- Implementation
 
 	set_is_selected (an_is_selected: like is_selected)
-			-- Set `is_selected' to `an_is_selected'.
+			-- <Precursor>
 		do
 			is_selected := an_is_selected
 		end
@@ -161,7 +180,7 @@ feature {NONE} -- Implementation
 			-- The ellipse used when link `is_reflexive'.
 
 	on_is_directed_change
-			-- `model'.`is_directed' changed.
+			-- <Precursor>
 		do
 			if model.is_directed then
 				line.enable_end_arrow
@@ -172,12 +191,10 @@ feature {NONE} -- Implementation
 			line.center_invalidate
 		end
 
-feature {NONE} -- Implementation
-
 	new_filled_list (n: INTEGER): like Current
-			-- New list with `n' elements.
+			-- <Precursor>
 		do
-			check unimplemented: False then end
+			create Result.make_resized_from (Current, n)
 		end
 
 invariant
